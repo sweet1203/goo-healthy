@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <title>💪 Healthy 9</title>
+  <meta name="description" content="하루 30~40분, 30일 데일리 운동 체크 · Notion 연동" />
+  <meta name="theme-color" content="#ff8fab" />
+  <meta name="apple-mobile-web-app-title" content="Healthy 9" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='112' fill='%23ff8fab'/><text y='368' x='256' text-anchor='middle' font-size='300'>💪</text></svg>" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --pink:    #ff8fab;
+      --pink-lt: #ffb3c6;
+      --peach:   #ffd6a5;
+      --mint:    #b5ead7;
+      --mint-dk: #8de1c0;
+      --lavender:#c7b8ea;
+      --bg:      #fff0f5;
+      --card:    #ffffff;
+      --text:    #5a4a6a;
+      --sub:     #a094b0;
+      --line:    #f0e6f2;
+      --done-bg: #f3f0f8;
+      --radius:  18px;
+      --shadow:  0 4px 20px rgba(200,150,180,.18);
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Apple SD Gothic Neo', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding-bottom: calc(40px + env(safe-area-inset-bottom));
+    }
+    .wrap { max-width: 480px; margin: 0 auto; padding: 0 16px; }
+
+    /* ── 헤더 ── */
+    header {
+      background: linear-gradient(135deg, var(--pink) 0%, var(--lavender) 100%);
+      padding: calc(22px + env(safe-area-inset-top)) 20px 18px;
+      text-align: center;
+      box-shadow: 0 3px 14px rgba(255,100,150,.2);
+      position: sticky; top: 0; z-index: 100;
+      border-radius: 0 0 26px 26px;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 800; color: #fff; letter-spacing: -0.3px; text-shadow: 0 2px 6px rgba(0,0,0,.12); }
+    #today-label { font-size: 0.76rem; color: rgba(255,255,255,.9); margin-top: 4px; }
+    #header-sub { font-size: 0.72rem; color: rgba(255,255,255,.8); margin-top: 2px; }
+    .lock-btn {
+      position: absolute; top: calc(18px + env(safe-area-inset-top)); right: 16px;
+      background: rgba(255,255,255,.25); border: none; border-radius: 50%;
+      width: 34px; height: 34px; font-size: 1rem; color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── 탭 ── */
+    #tabs { display: flex; gap: 8px; margin: 16px auto 0; }
+    .tab { flex: 1; padding: 9px 0; border: 2px solid var(--pink-lt); border-radius: 30px;
+      background: var(--card); font-size: 0.82rem; font-weight: 700; color: var(--sub);
+      cursor: pointer; transition: all .18s; text-align: center; }
+    .tab.active { background: linear-gradient(135deg, var(--pink), var(--lavender)); border-color: transparent; color: #fff; box-shadow: 0 3px 10px rgba(255,143,171,.3); }
+
+    /* ── 날짜 네비게이션 ── */
+    .date-nav { display: flex; align-items: center; gap: 10px; margin: 16px auto 0; }
+    .date-nav .arrow { background: var(--card); border: 2px solid var(--pink-lt); color: var(--pink);
+      width: 42px; height: 42px; border-radius: 14px; font-size: 1.2rem; cursor: pointer; flex-shrink: 0;
+      box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; }
+    .date-nav .arrow:disabled { opacity: .35; cursor: default; }
+    .date-center { flex: 1; text-align: center; background: var(--card); border-radius: 14px; padding: 7px 4px; box-shadow: var(--shadow); }
+    .date-center .d-main { font-size: 1.05rem; font-weight: 800; color: var(--text); }
+    .date-center .d-sub { font-size: 0.72rem; color: var(--sub); margin-top: 1px; }
+    #today-btn { display: block; margin: 10px auto 0; background: none; border: 2px solid #e8d5f0;
+      border-radius: 20px; padding: 5px 16px; font-size: 0.74rem; color: var(--sub); cursor: pointer; }
+
+    /* ── 운동 요약 카드 ── */
+    .info-row { display: flex; gap: 8px; margin: 16px auto 0; flex-wrap: wrap; justify-content: center; }
+    .chip { font-size: 0.74rem; border-radius: 12px; padding: 5px 12px; font-weight: 700; }
+    .chip-place { background: #e8f0fe; color: #4a6fa5; }
+    .chip-kind  { background: #f0e6ff; color: #8a6fc0; }
+    .chip-dow   { background: #d9f5ea; color: #3fa987; }
+
+    .section-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin-top: 16px; overflow: hidden; }
+    .section-card > .sc-head { padding: 14px 16px 10px; font-weight: 800; font-size: 0.98rem; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .sc-body { padding: 0 16px 14px; }
+
+    /* 진행률 링 */
+    .ring-wrap { display: flex; align-items: center; gap: 16px; padding: 16px; }
+    .ring { position: relative; width: 66px; height: 66px; flex-shrink: 0; }
+    .ring svg { transform: rotate(-90deg); }
+    .ring .pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 800; color: var(--pink); }
+    .ring-txt .rt-main { font-size: 1rem; font-weight: 800; }
+    .ring-txt .rt-sub { font-size: 0.76rem; color: var(--sub); margin-top: 2px; line-height: 1.4; }
+
+    /* 체크 아이템 (큰 4종 + 운동 리스트 공용) */
+    .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
+    .check-item:first-child { border-top: none; }
+    .cb-box { width: 26px; height: 26px; border: 2.5px solid var(--pink-lt); border-radius: 8px; background: #fff;
+      display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; transition: all .18s; margin-top: 1px; }
+    .check-item.on .cb-box { background: linear-gradient(135deg, var(--mint), var(--mint-dk)); border-color: transparent; }
+    .check-item.on .cb-box::after { content: '✓'; color: #fff; font-weight: 800; }
+    .ci-body { flex: 1; min-width: 0; }
+    .ci-title { font-size: 0.96rem; font-weight: 600; line-height: 1.4; }
+    .check-item.on .ci-title { color: var(--sub); text-decoration: line-through; }
+    .ci-desc { font-size: 0.74rem; color: var(--sub); margin-top: 2px; }
+    .ci-busy { opacity: .5; pointer-events: none; }
+
+    .big-check .check-item { padding: 14px 0; }
+    .big-check .ci-title { font-weight: 700; font-size: 1rem; }
+
+    /* 접이식 상세 */
+    details.detail { margin-top: 10px; border: 1.5px dashed var(--pink-lt); border-radius: 14px; padding: 0 14px; background: #fff8fb; }
+    details.detail > summary { list-style: none; cursor: pointer; padding: 11px 0; font-size: 0.84rem; font-weight: 700; color: var(--pink); display: flex; align-items: center; gap: 6px; }
+    details.detail > summary::-webkit-details-marker { display: none; }
+    details.detail[open] > summary { border-bottom: 1px solid var(--line); }
+    details.detail .d-line { font-size: 0.82rem; color: var(--text); padding: 7px 0; border-top: 1px solid var(--line); line-height: 1.5; }
+    details.detail .d-line:first-child { border-top: none; }
+    .sec-body-txt { font-size: 0.86rem; color: var(--text); line-height: 1.55; padding: 8px 0; }
+
+    /* 가이드 링크 버튼 */
+    .guide-btn { display: flex; align-items: center; gap: 10px; margin-top: 16px; background: var(--card);
+      border: 2px solid var(--peach); border-radius: var(--radius); padding: 14px 16px; text-decoration: none;
+      color: var(--text); font-weight: 700; font-size: 0.9rem; box-shadow: var(--shadow); }
+    .guide-btn .g-emoji { font-size: 1.3rem; }
+    .guide-btn .g-arrow { margin-left: auto; color: var(--sub); }
+
+    /* 메모 */
+    .memo-box textarea { width: 100%; border: 2px solid var(--line); border-radius: 14px; padding: 12px 14px;
+      font-size: 0.9rem; color: var(--text); resize: vertical; min-height: 64px; outline: none; font-family: inherit; background: #fffafc; }
+    .memo-box textarea:focus { border-color: var(--pink-lt); }
+    .memo-save { margin-top: 8px; float: right; background: linear-gradient(135deg, var(--pink), var(--lavender));
+      color: #fff; border: none; border-radius: 14px; padding: 8px 18px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+
+    /* 목표 배너 */
+    .goal-banner { margin-top: 18px; background: linear-gradient(135deg, #fff6e9, #fdeef6); border: 1.5px solid var(--peach);
+      border-radius: var(--radius); padding: 14px 16px; font-size: 0.8rem; color: #8a6a55; line-height: 1.5; }
+    .goal-banner b { color: var(--pink); }
+
+    /* ── 달력 ── */
+    #cal-view { display: none; }
+    .cal-head { text-align: center; font-weight: 800; font-size: 1rem; margin: 18px 0 10px; color: var(--text); }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .cal-dow { text-align: center; font-size: 0.72rem; color: var(--sub); font-weight: 700; padding-bottom: 4px; }
+    .cal-cell { aspect-ratio: 1; border-radius: 12px; background: var(--card); box-shadow: 0 2px 8px rgba(200,150,180,.12);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+    .cal-cell.empty { background: transparent; box-shadow: none; cursor: default; }
+    .cal-cell.out { opacity: .4; }
+    .cal-cell .cday { font-size: 0.82rem; font-weight: 700; }
+    .cal-cell.today { outline: 2.5px solid var(--pink); }
+    .cal-cell.sel { background: linear-gradient(135deg, var(--pink), var(--lavender)); }
+    .cal-cell.sel .cday { color: #fff; }
+    .cal-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 3px; background: var(--line); }
+    .cal-dot.partial { background: var(--peach); }
+    .cal-dot.full { background: var(--mint-dk); }
+    .cal-legend { display: flex; justify-content: center; gap: 14px; margin-top: 14px; font-size: 0.72rem; color: var(--sub); }
+    .cal-legend span { display: flex; align-items: center; gap: 5px; }
+    .cal-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+    /* 전체 진행 요약 */
+    .overview { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-top: 16px; }
+    .ov-bar { height: 10px; background: var(--line); border-radius: 6px; overflow: hidden; margin-top: 8px; }
+    .ov-fill { height: 100%; background: linear-gradient(90deg, var(--pink), var(--mint-dk)); border-radius: 6px; transition: width .4s; }
+    .ov-txt { font-size: 0.82rem; font-weight: 700; display: flex; justify-content: space-between; }
+
+    /* 상태/빈 화면 */
+    .state { text-align: center; padding: 50px 20px; color: var(--sub); }
+    .state .emoji { font-size: 2.6rem; display: block; margin-bottom: 12px; }
+    .state p { font-size: 0.88rem; line-height: 1.6; }
+
+    /* 토스트 */
+    #toast { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom)); left: 50%;
+      transform: translateX(-50%) translateY(90px); background: #5a4a6a; color: #fff; padding: 10px 20px;
+      border-radius: 20px; font-size: 0.82rem; font-weight: 600; z-index: 999; transition: transform .3s ease;
+      max-width: 90vw; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* 로그인 모달 */
+    #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(90,74,106,.45); z-index: 200;
+      align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    #modal-overlay.show { display: flex; }
+    #modal { background: #fff; border-radius: 24px; padding: 30px 26px; width: min(360px, 90vw); box-shadow: 0 12px 40px rgba(0,0,0,.18); }
+    #modal h2 { font-size: 1.15rem; color: var(--text); margin-bottom: 6px; }
+    #modal p { font-size: 0.8rem; color: var(--sub); margin-bottom: 18px; line-height: 1.5; }
+    #modal-pw { width: 100%; border: 2.5px solid var(--pink-lt); border-radius: var(--radius); padding: 12px 16px;
+      font-size: 1rem; color: var(--text); outline: none; margin-bottom: 12px; }
+    #modal-pw:focus { border-color: var(--pink); }
+    #modal-err { font-size: 0.78rem; color: var(--pink); margin-bottom: 10px; min-height: 18px; }
+    #modal-ok { width: 100%; padding: 13px; border-radius: var(--radius); border: none; font-size: 0.95rem;
+      font-weight: 700; cursor: pointer; background: linear-gradient(135deg, var(--pink), var(--lavender)); color: #fff; }
+
+    .skeleton { background: linear-gradient(90deg, #f5edf5 25%, #faf4fa 50%, #f5edf5 75%); background-size: 200% 100%;
+      animation: sk 1.2s infinite; border-radius: var(--radius); height: 90px; margin-top: 16px; }
+    @keyframes sk { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  </style>
+</head>
+<body>
+
+<!-- 로그인 모달 -->
+<div id="modal-overlay">
+  <div id="modal">
+    <h2>🔐 로그인</h2>
+    <p>비밀번호를 입력하면 Notion 운동 DB와 연결돼요.<br>체크와 메모가 노션에 안전하게 저장됩니다.</p>
+    <input id="modal-pw" type="password" placeholder="비밀번호 입력..." autocomplete="current-password" />
+    <div id="modal-err"></div>
+    <button id="modal-ok">연결하기</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<header>
+  <button class="lock-btn" id="lock-btn" title="로그인 / 로그아웃">🔑</button>
+  <h1>💪 Healthy 9</h1>
+  <div id="today-label"></div>
+  <div id="header-sub"></div>
+</header>
+
+<div class="wrap">
+  <div id="tabs">
+    <button class="tab active" data-tab="day">오늘 운동</button>
+    <button class="tab" data-tab="cal">달력</button>
+  </div>
+
+  <!-- 오늘(일자) 뷰 -->
+  <div id="day-view">
+    <div class="date-nav">
+      <button class="arrow" id="prev-day" aria-label="이전 날">‹</button>
+      <div class="date-center">
+        <div class="d-main" id="date-main">—</div>
+        <div class="d-sub" id="date-sub"></div>
+      </div>
+      <button class="arrow" id="next-day" aria-label="다음 날">›</button>
+    </div>
+    <button id="today-btn">📍 오늘로</button>
+    <div id="day-body"></div>
+  </div>
+
+  <!-- 달력 뷰 -->
+  <div id="cal-view">
+    <div class="cal-head" id="cal-title">2026년 11월</div>
+    <div class="cal-grid" id="cal-dows"></div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <span><i style="background:var(--line)"></i>미완료</span>
+      <span><i style="background:var(--peach)"></i>일부</span>
+      <span><i style="background:var(--mint-dk)"></i>완료</span>
+    </div>
+    <div class="overview" id="overview"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════ 상수 ═══════════ */
+const API_BASE = '/api';
+const TOKEN_KEY = 'healthy9_token';
+const START = '2026-11-17';
+const END   = '2026-12-16';
+const DOW = ['일','월','화','수','목','금','토'];
+const MORNING_GYM_DOWS = ['월','수','토']; // 그 외는 집
+
+/* ═══════════ 상태 ═══════════ */
+let token = null;
+let selectedDate = null;
+let overview = [];          // 30일 요약 캐시
+let overviewLoaded = false;
+let dayCache = {};          // date → detail
+let calYear = 2026, calMonth = 10; // 0-indexed month (10 = 11월)
+
+/* ═══════════ 유틸 ═══════════ */
+const $ = (id) => document.getElementById(id);
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;'); }
+function kstTodayStr(){ return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
+function clamp(d){ return d < START ? START : d > END ? END : d; }
+function addDays(dateStr, n){ const d=new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+n); const p=x=>String(x).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
+function dowOf(dateStr){ return DOW[new Date(dateStr+'T00:00:00').getDay()]; }
+function fmtMain(dateStr){ const d=new Date(dateStr+'T00:00:00'); return `${d.getMonth()+1}월 ${d.getDate()}일 (${dowOf(dateStr)})`; }
+function inRange(d){ return d>=START && d<=END; }
+
+let _tt; function toast(msg, ms=2200){ const el=$('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'), ms); }
+
+/* ═══════════ API ═══════════ */
+function headers(){ return { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` }; }
+async function api(path, opts={}){
+  const res = await fetch(API_BASE+path, { ...opts, headers:{ ...headers(), ...(opts.headers||{}) } });
+  if (res.status === 401){ handleAuthFail(); throw new Error('인증 만료'); }
+  if (!res.ok){ const e = await res.json().catch(()=>({})); throw new Error(e.error || `오류 ${res.status}`); }
+  return res.json();
+}
+
+/* ═══════════ 인증 ═══════════ */
+function showModal(){ $('modal-overlay').classList.add('show'); $('modal-pw').value=''; $('modal-err').textContent=''; setTimeout(()=>$('modal-pw').focus(),100); }
+function hideModal(){ $('modal-overlay').classList.remove('show'); }
+function handleAuthFail(){ token=null; try{localStorage.removeItem(TOKEN_KEY);}catch{} showModal(); }
+
+async function tryLogin(pw){
+  $('modal-err').textContent=''; $('modal-ok').textContent='확인 중...';
+  try{
+    const res = await fetch(`${API_BASE}/auth`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:pw}) });
+    const data = await res.json();
+    if (data.ok){
+      token = data.token;
+      try{ localStorage.setItem(TOKEN_KEY, token); }catch{}
+      hideModal();
+      await boot();
+    } else { $('modal-err').textContent = data.error || '비밀번호가 틀렸어요 🙅'; }
+  }catch{ $('modal-err').textContent='서버 연결 실패. 잠시 후 다시 시도해주세요.'; }
+  finally{ $('modal-ok').textContent='연결하기'; }
+}
+
+/* ═══════════ 데이터 로드 ═══════════ */
+async function loadOverview(){
+  try{ const data = await api('/day'); overview = data.days || []; overviewLoaded = true; }
+  catch(e){ toast('⚠️ 목록 로드 실패: '+e.message); }
+}
+async function loadDay(date, force=false){
+  if (!force && dayCache[date]) return dayCache[date];
+  const data = await api('/day?date='+date);
+  dayCache[date] = data;
+  return data;
+}
+
+/* ═══════════ 오늘(일자) 뷰 ═══════════ */
+function morningRule(dow){ return MORNING_GYM_DOWS.includes(dow) ? '헬스장' : '집'; }
+function eveningPlan(dow){
+  if (dow==='화'||dow==='목') return '테니스 기초연습 + 🏊 수영';
+  if (dow==='금') return '🎾 테니스 레슨';
+  return '테니스 기초연습';
+}
+
+async function renderDay(){
+  const date = selectedDate;
+  $('date-main').textContent = fmtMain(date);
+  $('date-sub').textContent = inRange(date) ? `플랜 ${dayIndex(date)}일차 / 30일` : '플랜 기간 밖';
+  $('prev-day').disabled = date <= START;
+  $('next-day').disabled = date >= END;
+
+  const body = $('day-body');
+  body.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
+
+  if (!inRange(date)){
+    body.innerHTML = `<div class="state"><span class="emoji">🗓️</span><p>플랜 기간은<br>2026.11.17 ~ 12.16 이에요.</p></div>`;
+    return;
+  }
+
+  let data;
+  try{ data = await loadDay(date); }
+  catch(e){ body.innerHTML = `<div class="state"><span class="emoji">😿</span><p>${esc(e.message)}</p></div>`; return; }
+
+  if (!data.found){
+    body.innerHTML = `<div class="state"><span class="emoji">🔍</span><p>이 날짜의 운동 페이지를<br>노션에서 찾지 못했어요.</p></div>`;
+    return;
+  }
+
+  const dow = data.dow || dowOf(date);
+  const checks = data.checks || {};
+  const doneCount = Object.values(checks).filter(Boolean).length;
+  const pct = Math.round(doneCount/4*100);
+  const b = data.body || {};
+
+  const bigChecks = [
+    { prop:'아침 완료', emoji:'🌅', title:'아침 운동 완료', desc:`${morningRule(dow)} · 30~40분` },
+    { prop:'저녁 완료', emoji:'🌙', title:'저녁 운동 완료', desc:`${eveningPlan(dow)} · 10~20분` },
+    { prop:'테니스 기초연습', emoji:'🎾', title:'테니스 기초연습', desc:'스플릿 스텝 · 빈스윙' },
+    { prop:'산책 완료', emoji:'🚶', title:'산책 완료', desc:'가볍게 걷기' },
+  ];
+
+  let html = '';
+
+  // 요약 칩
+  html += `<div class="info-row">
+    <span class="chip chip-dow">${esc(dow)}요일</span>
+    <span class="chip chip-place">📍 ${esc(data.place || morningRule(dow))}</span>
+    ${data.kind ? `<span class="chip chip-kind">${esc(data.kind)}</span>` : ''}
+  </div>`;
+
+  // 진행률 링 + 큰 체크 4종
+  const C = 2*Math.PI*28;
+  html += `<div class="section-card">
+    <div class="ring-wrap">
+      <div class="ring">
+        <svg width="66" height="66"><circle cx="33" cy="33" r="28" stroke="#f0e6f2" stroke-width="7" fill="none"/>
+        <circle cx="33" cy="33" r="28" stroke="#ff8fab" stroke-width="7" fill="none" stroke-linecap="round"
+          stroke-dasharray="${C}" stroke-dashoffset="${C*(1-doneCount/4)}"/></svg>
+        <div class="pct">${pct}%</div>
+      </div>
+      <div class="ring-txt"><div class="rt-main">오늘 ${doneCount}/4 완료</div>
+      <div class="rt-sub">${esc(data.title || '')}</div></div>
+    </div>
+    <div class="sc-body big-check">
+      ${bigChecks.map(c=>`
+        <div class="check-item ${checks[c.prop]?'on':''}" data-prop="${esc(c.prop)}">
+          <div class="cb-box"></div>
+          <div class="ci-body"><div class="ci-title">${c.emoji} ${esc(c.title)}</div><div class="ci-desc">${esc(c.desc)}</div></div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+
+  // 요일별 기구 사진·사용법 가이드 링크
+  if (b.guide){
+    const gtext = b.guide.text || '📷 기구 사진·사용법 보기';
+    const hasEmoji = /^\s*\p{Extended_Pictographic}/u.test(gtext);
+    html += `<a class="guide-btn" href="${esc(b.guide.url)}" target="_blank" rel="noopener">
+      ${hasEmoji ? '' : '<span class="g-emoji">📷</span>'}<span>${esc(gtext)}</span><span class="g-arrow">›</span></a>`;
+  }
+
+  // 시간순 운동 체크리스트 (페이지 본문 to_do 블록)
+  (b.sections||[]).forEach(sec=>{
+    const hasItems = sec.items && sec.items.length;
+    const hasBody = sec.body && sec.body.length;
+    if (!hasItems && !hasBody && !sec.heading) return;
+    html += `<div class="section-card"><div class="sc-head">${esc(sec.heading||'운동')}</div><div class="sc-body">`;
+    (sec.items||[]).forEach(it=>{
+      html += `<div class="check-item ${it.checked?'on':''}" data-block="${esc(it.id)}">
+        <div class="cb-box"></div><div class="ci-body"><div class="ci-title">${esc(it.text)}</div></div></div>`;
+    });
+    (sec.body||[]).forEach(line=>{ html += `<div class="sec-body-txt">${esc(line)}</div>`; });
+    html += `</div></div>`;
+  });
+
+  // 접이식 세트·횟수·자세
+  if (b.detail && b.detail.lines && b.detail.lines.length){
+    html += `<details class="detail"><summary>▸ ${esc(b.detail.title)}</summary>
+      ${b.detail.lines.map(l=>`<div class="d-line">${esc(l)}</div>`).join('')}</details>`;
+  }
+
+  // 한줄메모
+  html += `<div class="section-card"><div class="sc-head">✍️ 한줄메모 <span style="font-weight:500;color:var(--sub);font-size:.74rem">(선택)</span></div>
+    <div class="sc-body memo-box">
+      <textarea id="memo-area" placeholder="오늘 컨디션이나 느낌을 적어보세요 (선택)">${esc(data.memo||'')}</textarea>
+      <button class="memo-save" id="memo-save">저장</button><div style="clear:both"></div>
+    </div></div>`;
+
+  // 목표 배너
+  html += `<div class="goal-banner">🎯 <b>2027 목표</b> · 턱걸이 1개 성공 · 복부 꾸준히 관리<br>오늘 1%가 쌓여 내년을 만들어요 💪</div>`;
+
+  body.innerHTML = html;
+  bindDayEvents(date);
+}
+
+function dayIndex(date){ return Math.round((new Date(date+'T00:00:00') - new Date(START+'T00:00:00'))/86400000)+1; }
+
+function bindDayEvents(date){
+  // 큰 체크 4종
+  $('day-body').querySelectorAll('.check-item[data-prop]').forEach(el=>{
+    el.addEventListener('click', ()=> toggleProp(el, date));
+  });
+  // 운동 리스트 블록 체크
+  $('day-body').querySelectorAll('.check-item[data-block]').forEach(el=>{
+    el.addEventListener('click', ()=> toggleBlock(el));
+  });
+  const ms = $('memo-save'); if (ms) ms.addEventListener('click', ()=> saveMemo(date));
+}
+
+async function toggleProp(el, date){
+  if (el.classList.contains('ci-busy')) return;
+  const prop = el.dataset.prop;
+  const next = !el.classList.contains('on');
+  el.classList.toggle('on', next); el.classList.add('ci-busy');
+  const data = dayCache[date];
+  try{
+    await api('/day', { method:'PATCH', body:JSON.stringify({ notionId:data.notionId, prop, value:next }) });
+    if (data) data.checks[prop] = next;
+    syncOverview(date, prop, next);
+    refreshRing(date);
+    toast(next?'✅ 체크 저장됐어요':'↩️ 해제됐어요', 1400);
+  }catch(e){ el.classList.toggle('on', !next); toast('⚠️ 저장 실패: '+e.message); }
+  finally{ el.classList.remove('ci-busy'); }
+}
+
+async function toggleBlock(el){
+  if (el.classList.contains('ci-busy')) return;
+  const blockId = el.dataset.block;
+  const next = !el.classList.contains('on');
+  el.classList.toggle('on', next); el.classList.add('ci-busy');
+  try{
+    await api('/day', { method:'PATCH', body:JSON.stringify({ blockId, checked:next }) });
+    // 캐시의 해당 블록 상태도 갱신
+    const data = dayCache[selectedDate];
+    data?.body?.sections?.forEach(s=> s.items?.forEach(it=>{ if (it.id===blockId) it.checked=next; }));
+    toast(next?'💪 운동 체크!':'↩️ 해제', 1200);
+  }catch(e){ el.classList.toggle('on', !next); toast('⚠️ 저장 실패: '+e.message); }
+  finally{ el.classList.remove('ci-busy'); }
+}
+
+async function saveMemo(date){
+  const ta = $('memo-area'); if (!ta) return;
+  const btn = $('memo-save'); btn.textContent='저장 중...'; btn.disabled=true;
+  const data = dayCache[date];
+  try{
+    await api('/day', { method:'PATCH', body:JSON.stringify({ notionId:data.notionId, prop:'한줄메모', value:ta.value }) });
+    if (data) data.memo = ta.value;
+    toast('📝 메모 저장됐어요');
+  }catch(e){ toast('⚠️ 메모 저장 실패: '+e.message); }
+  finally{ btn.textContent='저장'; btn.disabled=false; }
+}
+
+function refreshRing(date){
+  const data = dayCache[date]; if(!data) return;
+  const done = Object.values(data.checks).filter(Boolean).length;
+  const ring = $('day-body').querySelector('.ring');
+  if (ring){
+    const C = 2*Math.PI*28;
+    ring.querySelectorAll('circle')[1].setAttribute('stroke-dashoffset', C*(1-done/4));
+    ring.querySelector('.pct').textContent = Math.round(done/4*100)+'%';
+  }
+  const rt = $('day-body').querySelector('.rt-main'); if (rt) rt.textContent = `오늘 ${done}/4 완료`;
+}
+
+function syncOverview(date, prop, val){
+  const row = overview.find(d=> d.date===date);
+  if (row) row.checks[prop] = val;
+}
+
+/* ═══════════ 달력 뷰 ═══════════ */
+function renderCalendar(){
+  $('cal-title').textContent = `${calYear}년 ${calMonth+1}월`;
+  $('cal-dows').innerHTML = ['일','월','화','수','목','금','토'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  const grid = $('cal-grid'); grid.innerHTML='';
+  const first = new Date(calYear, calMonth, 1).getDay();
+  const days = new Date(calYear, calMonth+1, 0).getDate();
+  const today = kstTodayStr();
+  for (let i=0;i<first;i++){ const c=document.createElement('div'); c.className='cal-cell empty'; grid.appendChild(c); }
+  for (let d=1; d<=days; d++){
+    const p = x=>String(x).padStart(2,'0');
+    const ds = `${calYear}-${p(calMonth+1)}-${p(d)}`;
+    const cell = document.createElement('div');
+    const within = inRange(ds);
+    cell.className = 'cal-cell' + (within?'':' out') + (ds===today?' today':'') + (ds===selectedDate?' sel':'');
+    let dotCls = '';
+    if (within){
+      const row = overview.find(r=> r.date===ds);
+      const n = row ? Object.values(row.checks).filter(Boolean).length : 0;
+      dotCls = n>=4 ? 'full' : n>0 ? 'partial' : '';
+    }
+    cell.innerHTML = `<div class="cday">${d}</div>${within?`<div class="cal-dot ${dotCls}"></div>`:''}`;
+    if (within) cell.addEventListener('click', ()=>{ selectedDate=ds; switchTab('day'); });
+    grid.appendChild(cell);
+  }
+  renderOverview();
+}
+
+function renderOverview(){
+  const within = overview.filter(d=> inRange(d.date));
+  const total = within.length * 4;
+  const done = within.reduce((s,d)=> s + Object.values(d.checks).filter(Boolean).length, 0);
+  const fullDays = within.filter(d=> Object.values(d.checks).every(Boolean)).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  $('overview').innerHTML = `
+    <div class="ov-txt"><span>전체 진행률</span><span>${pct}%</span></div>
+    <div class="ov-bar"><div class="ov-fill" style="width:${pct}%"></div></div>
+    <div style="font-size:.76rem;color:var(--sub);margin-top:8px">완벽히 끝낸 날 <b style="color:var(--mint-dk)">${fullDays}</b>일 · 체크 ${done}/${total}</div>`;
+}
+
+/* ═══════════ 탭 전환 ═══════════ */
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.tab===tab));
+  $('day-view').style.display = tab==='day' ? 'block' : 'none';
+  $('cal-view').style.display = tab==='cal' ? 'block' : 'none';
+  if (tab==='day') renderDay();
+  else { calYear = +selectedDate.slice(0,4); calMonth = +selectedDate.slice(5,7)-1; renderCalendar(); }
+}
+
+/* ═══════════ 초기화 / 부팅 ═══════════ */
+async function boot(){
+  await loadOverview();
+  renderDay();
+}
+
+function setupEvents(){
+  $('lock-btn').addEventListener('click', ()=>{
+    if (token){ if (confirm('로그아웃 할까요?')){ token=null; try{localStorage.removeItem(TOKEN_KEY);}catch{} dayCache={}; overview=[]; showModal(); } }
+    else showModal();
+  });
+  $('modal-ok').addEventListener('click', ()=> tryLogin($('modal-pw').value));
+  $('modal-pw').addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.isComposing) tryLogin($('modal-pw').value); });
+  document.querySelectorAll('.tab').forEach(t=> t.addEventListener('click', ()=> switchTab(t.dataset.tab)));
+  $('prev-day').addEventListener('click', ()=>{ selectedDate = clamp(addDays(selectedDate,-1)); renderDay(); });
+  $('next-day').addEventListener('click', ()=>{ selectedDate = clamp(addDays(selectedDate,1)); renderDay(); });
+  $('today-btn').addEventListener('click', ()=>{ selectedDate = clamp(kstTodayStr()); renderDay(); });
+}
+
+function init(){
+  // 헤더 날짜
+  const t = kstTodayStr();
+  $('today-label').textContent = `오늘 ${fmtMain(t)} · 한국시간`;
+  const tdow = dowOf(t);
+  $('header-sub').textContent = `아침운동: ${morningRule(tdow)} · 저녁: ${eveningPlan(tdow)}`;
+  selectedDate = clamp(t);
+
+  setupEvents();
+
+  // 저장 토큰 자동 로그인
+  let saved=null; try{ saved = localStorage.getItem(TOKEN_KEY); }catch{}
+  if (saved){ token = saved; boot(); }
+  else showModal();
+
+  // PWA 서비스워커
+  if ('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
+}
+init();
+</script>
+</body>
+</html>
