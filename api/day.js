@@ -15,7 +15,7 @@
 const NOTION_VERSION = '2022-06-28';
 const NOTION_API = 'https://api.notion.com/v1';
 // 30일 데일리 운동 체크 DB (환경변수로 덮어쓸 수 있음)
-const DB_ID = process.env.NOTION_DB_ID || '41a0fb7d-31de-8143-a1a7-df5474a9e8ce';
+const DB_ID = (process.env.NOTION_DB_ID || '41a0fb7d-31de-8143-a1a7-df5474a9e8ce').trim();
 
 // 쓰기를 허용하는 속성 화이트리스트 (임의 속성 쓰기 방지)
 const CHECK_PROPS = ['아침 완료', '저녁 완료', '테니스 기초연습', '산책 완료'];
@@ -23,12 +23,13 @@ const TEXT_PROPS = ['한줄메모'];
 
 function isAuthorized(req) {
   const token = (req.headers['authorization'] || '').replace('Bearer ', '').trim();
-  return !!process.env.DEV_PASSWORD && token === process.env.DEV_PASSWORD;
+  const secret = (process.env.DEV_PASSWORD || '').trim();
+  return !!secret && token === secret;
 }
 
 function notionHeaders() {
   return {
-    Authorization: `Bearer ${process.env.NOTION_TOKEN}`,
+    Authorization: `Bearer ${(process.env.NOTION_TOKEN || '').trim()}`,
     'Notion-Version': NOTION_VERSION,
     'Content-Type': 'application/json',
   };

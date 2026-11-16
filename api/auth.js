@@ -12,11 +12,14 @@ export default function handler(req, res) {
   const { password } = req.body || {};
   if (!password) return res.status(400).json({ ok: false, error: '비밀번호를 입력해주세요.' });
 
-  if (!process.env.DEV_PASSWORD) {
+  // 환경변수/입력값의 앞뒤 공백·개행을 제거해 비교 (붙여넣기 실수 방지)
+  const secret = (process.env.DEV_PASSWORD || '').trim();
+  if (!secret) {
     return res.status(500).json({ ok: false, error: '서버에 DEV_PASSWORD 가 설정되지 않았어요.' });
   }
-  if (password === process.env.DEV_PASSWORD) {
-    return res.status(200).json({ ok: true, token: password });
+  if (String(password).trim() === secret) {
+    // 저장되는 토큰은 공백을 제거한 정규화 값으로 돌려줍니다.
+    return res.status(200).json({ ok: true, token: secret });
   }
   return res.status(401).json({ ok: false, error: '비밀번호가 틀렸어요.' });
 }
