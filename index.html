@@ -423,8 +423,9 @@ async function renderDay(){
     ).join('');
 
     if (sec.collapsible){
+      const sumTitle = esc((sec.heading||'자세히 보기').replace(/^[\s▸▶▷▾▼►▽◂]+/,'').trim() || '자세히 보기');
       const lines = (sec.lines||[]).map(l=>`<div class="d-line">${esc(l)}</div>`).join('');
-      html += `<details class="detail"><summary>${esc(sec.heading||'자세히 보기')}</summary><div class="detail-inner">${itemsHtml}${lines}</div></details>`;
+      html += `<details class="detail"><summary>${sumTitle}</summary><div class="detail-inner">${itemsHtml}${lines}</div></details>`;
     } else {
       const lines = (sec.lines||[]).map(l=>`<div class="sec-body-txt">${esc(l)}</div>`).join('');
       html += `<div class="section-card"><div class="sc-head">${esc(sec.heading||'운동')}</div><div class="sc-body">${itemsHtml}${lines}</div></div>`;
