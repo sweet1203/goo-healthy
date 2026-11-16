@@ -85,44 +85,65 @@ async function listBlocks(blockId) {
   return out;
 }
 
+// 접이식(toggle / 토글 제목) 블록의 자식을 체크항목(items)과 설명줄(lines)로 분리
+async function collectChildren(blockId) {
+  const children = await listBlocks(blockId);
+  const items = [];
+  const lines = [];
+  for (const c of children) {
+    const ct = c.type;
+    const crt = c[ct]?.rich_text;
+    if (ct === 'to_do') {
+      items.push({ id: c.id, text: plain(crt), checked: !!c.to_do?.checked });
+    } else {
+      const tx = plain(crt);
+      if (tx) lines.push((ct.endsWith('list_item') ? '• ' : '') + tx);
+    }
+  }
+  return { items, lines };
+}
+
 // 페이지 본문 → 화면에서 바로 그릴 수 있는 구조로 변환
 async function parseBody(pageId) {
   const blocks = await listBlocks(pageId);
-  const result = { summary: '', guide: null, sections: [], detail: null };
+  const result = { summary: '', guide: null, sections: [] };
   let section = null;
+  const push = (s) => { result.sections.push(s); return s; };
 
   for (const b of blocks) {
     const t = b.type;
-    const rt = b[t]?.rich_text;
+    const data = b[t] || {};
+    const rt = data.rich_text;
 
     if (t === 'callout') {
       if (!result.summary) result.summary = plain(rt);
     } else if (t === 'heading_1' || t === 'heading_2' || t === 'heading_3') {
-      section = { heading: plain(rt), items: [], body: [] };
-      result.sections.push(section);
+      // 토글(접이식) 제목이면 접이식 섹션으로, 아니면 일반 섹션으로
+      if (data.is_toggleable && b.has_children) {
+        const { items, lines } = await collectChildren(b.id);
+        push({ heading: plain(rt), collapsible: true, items, lines });
+        section = null;
+      } else {
+        section = push({ heading: plain(rt), items: [], lines: [] });
+      }
+    } else if (t === 'toggle') {
+      const { items, lines } = b.has_children ? await collectChildren(b.id) : { items: [], lines: [] };
+      push({ heading: plain(rt) || '자세히 보기', collapsible: true, items, lines });
+      section = null;
     } else if (t === 'to_do') {
       const item = { id: b.id, text: plain(rt), checked: !!b.to_do?.checked };
-      (section ? section.items : (result.sections[0]?.items || [])).push(item);
-      if (!section) {
-        section = { heading: '', items: [item], body: [] };
-        result.sections.push(section);
-      }
+      if (!section) section = push({ heading: '', items: [], lines: [] });
+      section.items.push(item);
     } else if (t === 'paragraph') {
       const text = plain(rt);
       const href = firstHref(rt);
       if (href && !result.guide) {
         result.guide = { text: text || '📷 기구 사진·사용법 보기', url: href };
-      } else if (text) {
-        if (section) section.body.push(text);
+      } else if (text && section) {
+        section.lines.push(text);
       }
-    } else if (t === 'toggle') {
-      const children = b.has_children ? await listBlocks(b.id) : [];
-      const lines = children
-        .map((c) => plain(c[c.type]?.rich_text))
-        .filter(Boolean);
-      result.detail = { title: plain(rt) || '자세히 보기', lines };
     } else if (t === 'bulleted_list_item' || t === 'numbered_list_item') {
-      if (section) section.body.push('• ' + plain(rt));
+      if (section) section.lines.push('• ' + plain(rt));
     }
   }
   return result;

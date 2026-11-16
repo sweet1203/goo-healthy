@@ -98,7 +98,7 @@
     .ring-txt .rt-sub { font-size: 0.76rem; color: var(--sub); margin-top: 2px; line-height: 1.4; }
 
     /* 체크 아이템 (큰 4종 + 운동 리스트 공용) */
-    .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
+    .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
     .check-item:first-child { border-top: none; }
     .cb-box { width: 26px; height: 26px; border: 2.5px solid var(--pink-lt); border-radius: 8px; background: #fff;
       display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; transition: all .18s; margin-top: 1px; }
@@ -114,10 +114,14 @@
     .big-check .ci-title { font-weight: 700; font-size: 1rem; }
 
     /* 접이식 상세 */
-    details.detail { margin-top: 10px; border: 1.5px dashed var(--pink-lt); border-radius: 14px; padding: 0 14px; background: #fff8fb; }
-    details.detail > summary { list-style: none; cursor: pointer; padding: 11px 0; font-size: 0.84rem; font-weight: 700; color: var(--pink); display: flex; align-items: center; gap: 6px; }
+    details.detail { margin-top: 16px; border: 1.5px dashed var(--pink-lt); border-radius: 14px; padding: 0 14px; background: #fff8fb; }
+    /* summary 에 display:flex 를 주면 iOS Safari 에서 토글이 안 열림 — 쓰지 않음 */
+    details.detail > summary { list-style: none; cursor: pointer; padding: 13px 0; font-size: 0.88rem; font-weight: 700; color: var(--pink); user-select: none; -webkit-user-select: none; }
     details.detail > summary::-webkit-details-marker { display: none; }
-    details.detail[open] > summary { border-bottom: 1px solid var(--line); }
+    details.detail > summary::before { content: '▸'; display: inline-block; margin-right: 7px; transition: transform .2s; }
+    details.detail[open] > summary::before { transform: rotate(90deg); }
+    details.detail .detail-inner { border-top: 1px solid var(--line); padding: 4px 0 10px; }
+    details.detail .detail-inner .check-item { padding: 11px 0; }
     details.detail .d-line { font-size: 0.82rem; color: var(--text); padding: 7px 0; border-top: 1px solid var(--line); line-height: 1.5; }
     details.detail .d-line:first-child { border-top: none; }
     .sec-body-txt { font-size: 0.86rem; color: var(--text); line-height: 1.55; padding: 8px 0; }
@@ -408,25 +412,24 @@ async function renderDay(){
       ${hasEmoji ? '' : '<span class="g-emoji">📷</span>'}<span>${esc(gtext)}</span><span class="g-arrow">›</span></a>`;
   }
 
-  // 시간순 운동 체크리스트 (페이지 본문 to_do 블록)
+  // 섹션 렌더 — 일반 카드 / 접이식(details). 토글 제목·toggle 블록은 접이식으로.
   (b.sections||[]).forEach(sec=>{
     const hasItems = sec.items && sec.items.length;
-    const hasBody = sec.body && sec.body.length;
-    if (!hasItems && !hasBody && !sec.heading) return;
-    html += `<div class="section-card"><div class="sc-head">${esc(sec.heading||'운동')}</div><div class="sc-body">`;
-    (sec.items||[]).forEach(it=>{
-      html += `<div class="check-item ${it.checked?'on':''}" data-block="${esc(it.id)}">
-        <div class="cb-box"></div><div class="ci-body"><div class="ci-title">${esc(it.text)}</div></div></div>`;
-    });
-    (sec.body||[]).forEach(line=>{ html += `<div class="sec-body-txt">${esc(line)}</div>`; });
-    html += `</div></div>`;
-  });
+    const hasLines = sec.lines && sec.lines.length;
+    if (!hasItems && !hasLines && !sec.heading) return;
 
-  // 접이식 세트·횟수·자세
-  if (b.detail && b.detail.lines && b.detail.lines.length){
-    html += `<details class="detail"><summary>▸ ${esc(b.detail.title)}</summary>
-      ${b.detail.lines.map(l=>`<div class="d-line">${esc(l)}</div>`).join('')}</details>`;
-  }
+    const itemsHtml = (sec.items||[]).map(it=>
+      `<div class="check-item ${it.checked?'on':''}" data-block="${esc(it.id)}"><div class="cb-box"></div><div class="ci-body"><div class="ci-title">${esc(it.text)}</div></div></div>`
+    ).join('');
+
+    if (sec.collapsible){
+      const lines = (sec.lines||[]).map(l=>`<div class="d-line">${esc(l)}</div>`).join('');
+      html += `<details class="detail"><summary>${esc(sec.heading||'자세히 보기')}</summary><div class="detail-inner">${itemsHtml}${lines}</div></details>`;
+    } else {
+      const lines = (sec.lines||[]).map(l=>`<div class="sec-body-txt">${esc(l)}</div>`).join('');
+      html += `<div class="section-card"><div class="sc-head">${esc(sec.heading||'운동')}</div><div class="sc-body">${itemsHtml}${lines}</div></div>`;
+    }
+  });
 
   // 한줄메모
   html += `<div class="section-card"><div class="sc-head">✍️ 한줄메모 <span style="font-weight:500;color:var(--sub);font-size:.74rem">(선택)</span></div>
