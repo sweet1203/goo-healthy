@@ -1,7 +1,7 @@
 // sw.js — 서비스워커 (앱 셸 오프라인 + 홈 화면 설치)
 // 전략: /api 는 캐시하지 않고 항상 네트워크(실시간 Notion).
 //       나머지 정적 파일은 "네트워크 우선 + 캐시 폴백" 으로, 배포 즉시 최신 앱이 반영되게 함.
-const CACHE = 'healthy9-v2';
+const CACHE = 'healthy9-v3';
 const SHELL = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', (e) => {

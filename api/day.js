@@ -6,7 +6,7 @@
 //  PATCH /api/day  { blockId, checked }         → 페이지 본문 개별 운동(to_do) 체크 저장
 //
 //  안전 설계
-//   - 체크박스 4종(아침/저녁/테니스/산책)·한줄메모는 "페이지 속성" PATCH 로만 저장합니다.
+//   - 체크박스 3종(아침/저녁/산책)·한줄메모는 "페이지 속성" PATCH 로만 저장합니다.
 //   - 개별 운동 항목은 기존 to_do 블록의 checked 플래그만 PATCH 합니다.
 //     (블록을 지우거나 새로 만들지 않으므로 사용자가 노션에 적어둔 내용이 보존됩니다.)
 //   - Notion 토큰은 NOTION_TOKEN 환경변수로만 사용하고 응답에 담지 않습니다.
@@ -18,7 +18,8 @@ const NOTION_API = 'https://api.notion.com/v1';
 const DB_ID = (process.env.NOTION_DB_ID || '41a0fb7d-31de-8143-a1a7-df5474a9e8ce').trim();
 
 // 쓰기를 허용하는 속성 화이트리스트 (임의 속성 쓰기 방지)
-const CHECK_PROPS = ['아침 완료', '저녁 완료', '테니스 기초연습', '산책 완료'];
+// (테니스 기초연습은 저녁 운동에 통합 — 노션 속성·기존 기록은 그대로 두고 앱에서만 사용 안 함)
+const CHECK_PROPS = ['아침 완료', '저녁 완료', '산책 완료'];
 const TEXT_PROPS = ['한줄메모'];
 
 function isAuthorized(req) {
@@ -51,7 +52,6 @@ function propsOf(page) {
     checks: {
       '아침 완료': !!p['아침 완료']?.checkbox,
       '저녁 완료': !!p['저녁 완료']?.checkbox,
-      '테니스 기초연습': !!p['테니스 기초연습']?.checkbox,
       '산책 완료': !!p['산책 완료']?.checkbox,
     },
     memo: plain(p['한줄메모']?.rich_text),

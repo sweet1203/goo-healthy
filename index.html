@@ -97,7 +97,7 @@
     .ring-txt .rt-main { font-size: 1rem; font-weight: 800; }
     .ring-txt .rt-sub { font-size: 0.76rem; color: var(--sub); margin-top: 2px; line-height: 1.4; }
 
-    /* 체크 아이템 (큰 4종 + 운동 리스트 공용) */
+    /* 체크 아이템 (큰 3종 + 운동 리스트 공용) */
     .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
     .check-item:first-child { border-top: none; }
     .cb-box { width: 26px; height: 26px; border: 2.5px solid var(--pink-lt); border-radius: 8px; background: #fff;
@@ -266,6 +266,10 @@ const START = '2026-11-17';
 const END   = '2026-12-16';
 const DOW = ['일','월','화','수','목','금','토'];
 const MORNING_GYM_DOWS = ['월','수','토']; // 그 외는 집
+// 하루 큰 체크 3종 (테니스 기초연습은 저녁 운동 내용에 포함)
+const BIG_PROPS = ['아침 완료','저녁 완료','산책 완료'];
+const BIG_N = BIG_PROPS.length;
+const countDone = (checks)=> BIG_PROPS.filter(p=> checks && checks[p]).length;
 
 /* ═══════════ 상태 ═══════════ */
 let token = null;
@@ -331,9 +335,9 @@ async function loadDay(date, force=false){
 /* ═══════════ 오늘(일자) 뷰 ═══════════ */
 function morningRule(dow){ return MORNING_GYM_DOWS.includes(dow) ? '헬스장' : '집'; }
 function eveningPlan(dow){
-  if (dow==='화'||dow==='목') return '테니스 기초연습 + 🏊 수영';
+  if (dow==='화'||dow==='목') return '🎾 테니스 기초연습 + 🏊 수영';
   if (dow==='금') return '🎾 테니스 레슨';
-  return '테니스 기초연습';
+  return '🎾 테니스 기초연습';
 }
 
 async function renderDay(){
@@ -362,14 +366,13 @@ async function renderDay(){
 
   const dow = data.dow || dowOf(date);
   const checks = data.checks || {};
-  const doneCount = Object.values(checks).filter(Boolean).length;
-  const pct = Math.round(doneCount/4*100);
+  const doneCount = countDone(checks);
+  const pct = Math.round(doneCount/BIG_N*100);
   const b = data.body || {};
 
   const bigChecks = [
     { prop:'아침 완료', emoji:'🌅', title:'아침 운동 완료', desc:`${morningRule(dow)} · 30~40분` },
-    { prop:'저녁 완료', emoji:'🌙', title:'저녁 운동 완료', desc:`${eveningPlan(dow)} · 10~20분` },
-    { prop:'테니스 기초연습', emoji:'🎾', title:'테니스 기초연습', desc:'스플릿 스텝 · 빈스윙' },
+    { prop:'저녁 완료', emoji:'🌙', title:'저녁 운동 완료', desc:`${eveningPlan(dow)} · 10~20분`+(dow==='금'?'':' · 스플릿 스텝·빈스윙') },
     { prop:'산책 완료', emoji:'🚶', title:'산책 완료', desc:'가볍게 걷기' },
   ];
 
@@ -382,17 +385,17 @@ async function renderDay(){
     ${data.kind ? `<span class="chip chip-kind">${esc(data.kind)}</span>` : ''}
   </div>`;
 
-  // 진행률 링 + 큰 체크 4종
+  // 진행률 링 + 큰 체크 3종
   const C = 2*Math.PI*28;
   html += `<div class="section-card">
     <div class="ring-wrap">
       <div class="ring">
         <svg width="66" height="66"><circle cx="33" cy="33" r="28" stroke="#f0e6f2" stroke-width="7" fill="none"/>
         <circle cx="33" cy="33" r="28" stroke="#ff8fab" stroke-width="7" fill="none" stroke-linecap="round"
-          stroke-dasharray="${C}" stroke-dashoffset="${C*(1-doneCount/4)}"/></svg>
+          stroke-dasharray="${C}" stroke-dashoffset="${C*(1-doneCount/BIG_N)}"/></svg>
         <div class="pct">${pct}%</div>
       </div>
-      <div class="ring-txt"><div class="rt-main">오늘 ${doneCount}/4 완료</div>
+      <div class="ring-txt"><div class="rt-main">오늘 ${doneCount}/${BIG_N} 완료</div>
       <div class="rt-sub">${esc(data.title || '')}</div></div>
     </div>
     <div class="sc-body big-check">
@@ -449,7 +452,7 @@ async function renderDay(){
 function dayIndex(date){ return Math.round((new Date(date+'T00:00:00') - new Date(START+'T00:00:00'))/86400000)+1; }
 
 function bindDayEvents(date){
-  // 큰 체크 4종
+  // 큰 체크 3종
   $('day-body').querySelectorAll('.check-item[data-prop]').forEach(el=>{
     el.addEventListener('click', ()=> toggleProp(el, date));
   });
@@ -505,14 +508,14 @@ async function saveMemo(date){
 
 function refreshRing(date){
   const data = dayCache[date]; if(!data) return;
-  const done = Object.values(data.checks).filter(Boolean).length;
+  const done = countDone(data.checks);
   const ring = $('day-body').querySelector('.ring');
   if (ring){
     const C = 2*Math.PI*28;
-    ring.querySelectorAll('circle')[1].setAttribute('stroke-dashoffset', C*(1-done/4));
-    ring.querySelector('.pct').textContent = Math.round(done/4*100)+'%';
+    ring.querySelectorAll('circle')[1].setAttribute('stroke-dashoffset', C*(1-done/BIG_N));
+    ring.querySelector('.pct').textContent = Math.round(done/BIG_N*100)+'%';
   }
-  const rt = $('day-body').querySelector('.rt-main'); if (rt) rt.textContent = `오늘 ${done}/4 완료`;
+  const rt = $('day-body').querySelector('.rt-main'); if (rt) rt.textContent = `오늘 ${done}/${BIG_N} 완료`;
 }
 
 function syncOverview(date, prop, val){
@@ -538,8 +541,8 @@ function renderCalendar(){
     let dotCls = '';
     if (within){
       const row = overview.find(r=> r.date===ds);
-      const n = row ? Object.values(row.checks).filter(Boolean).length : 0;
-      dotCls = n>=4 ? 'full' : n>0 ? 'partial' : '';
+      const n = row ? countDone(row.checks) : 0;
+      dotCls = n>=BIG_N ? 'full' : n>0 ? 'partial' : '';
     }
     cell.innerHTML = `<div class="cday">${d}</div>${within?`<div class="cal-dot ${dotCls}"></div>`:''}`;
     if (within) cell.addEventListener('click', ()=>{ selectedDate=ds; switchTab('day'); });
@@ -550,9 +553,9 @@ function renderCalendar(){
 
 function renderOverview(){
   const within = overview.filter(d=> inRange(d.date));
-  const total = within.length * 4;
-  const done = within.reduce((s,d)=> s + Object.values(d.checks).filter(Boolean).length, 0);
-  const fullDays = within.filter(d=> Object.values(d.checks).every(Boolean)).length;
+  const total = within.length * BIG_N;
+  const done = within.reduce((s,d)=> s + countDone(d.checks), 0);
+  const fullDays = within.filter(d=> countDone(d.checks)===BIG_N).length;
   const pct = total ? Math.round(done/total*100) : 0;
   $('overview').innerHTML = `
     <div class="ov-txt"><span>전체 진행률</span><span>${pct}%</span></div>
